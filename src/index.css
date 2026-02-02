@@ -1,0 +1,24 @@
+/* Запрещаем выделение текста, чтобы случайные долгие нажатия не вызывали меню */
+* {
+  -webkit-tap-highlight-color: transparent;
+  user-select: none;
+}
+
+/* Но разрешаем в инпутах, чтобы можно было печатать */
+input, textarea {
+  user-select: text;
+}
+
+/* Предотвращаем "резиновый" скролл на iOS (опционально) */
+html, body {
+  overflow: hidden;
+  height: 100%;
+  position: fixed;
+  width: 100%;
+}
+
+#root {
+  height: 100%;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+}
