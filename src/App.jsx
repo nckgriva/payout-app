@@ -144,7 +144,7 @@ function App() {
           <Card>
             <CardContent>
               <Typography color="textSecondary" gutterBottom>Оборот: {totalRev.toFixed(2)} ₽</Typography>
-              <Typography variant="h5">Сумма: {totalPay.toFixed(2)} ₽</Typography>
+              <Typography variant="h5">Сумма: {Math.max(totalPay, 1500).toFixed(2)} ₽</Typography>
             </CardContent>
           </Card>
 
