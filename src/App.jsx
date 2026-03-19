@@ -194,8 +194,8 @@ function App() {
 
   // --- ЭКРАН: МЕСЯЦ ---
   const MonthRoute = () => {
-    const currentMonth = new Date().toISOString().split('-').slice(0, 2).join('-');
-    const monthItems = items.filter(i => i.date.startsWith(currentMonth));
+    const [selectedMonth, setSelectedMonth] = useState(new Date().toISOString().slice(0, 7));
+    const monthItems = items.filter(i => i.date.startsWith(selectedMonth));
     const totalRev = monthItems.reduce((s, i) => s + i.price, 0);
     const daysMap = monthItems.reduce((acc, i) => {
       if (!acc[i.date]) acc[i.date] = { totalRev: 0, totalPay: 0 };
@@ -209,9 +209,10 @@ function App() {
     return (
       <Box sx={{ pb: 7 }}>
         <AppBar position="static">
-          <Toolbar><Typography variant="h6">Месяц: {currentMonth}</Typography></Toolbar>
+          <Toolbar><Typography variant="h6">Месяц</Typography></Toolbar>
         </AppBar>
         <Container sx={{ mt: 2 }}>
+          <TextField label="Месяц" type="month" value={selectedMonth} onChange={(e) => setSelectedMonth(e.target.value)} fullWidth slotProps={{ inputLabel: { shrink: true } }} sx={{ mb: 2 }} />
           <Card>
             <CardContent>
               <Typography>Оборот: {totalRev.toFixed(2)} ₽</Typography>
