@@ -268,7 +268,7 @@ function App() {
             <Box sx={{ px: 2, py: 2 }}>
               <Typography sx={{ fontSize: 13, color: 'rgba(235,235,245,0.6)', mb: 0.5 }}>ВЫПЛАТА</Typography>
               <Typography sx={{ fontSize: 34, fontWeight: 700, letterSpacing: -0.5, color: '#30D158' }}>
-                {Math.max(totalPay, 1500).toFixed(2)} ₽
+                {(dayItems.length > 0 ? Math.max(totalPay, 1500) : 0).toFixed(2)} ₽
               </Typography>
             </Box>
           </Section>
