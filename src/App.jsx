@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import {
   Box,
   BottomNavigation,
@@ -21,7 +21,7 @@ import {
   TableHead,
   TableRow,
   IconButton,
-  Divider,
+  Switch,
   Container,
   AppBar,
   Toolbar
@@ -72,6 +72,7 @@ function App() {
     const [tax, setTax] = useState('0');
     const [payment, setPayment] = useState('40');
     const [date, setDate] = useState(new Date().toISOString().split('T')[0]);
+    const [direct, setDirect] = useState(false);
 
     const handleAdd = () => {
       if (!name || !price) return alert("Заполните название и цену");
@@ -80,15 +81,15 @@ function App() {
         id: Date.now().toString(),
         name,
         price: parseFloat(price),
-        tax: parseFloat(tax),
-        payment,
+        tax: direct ? 0 : parseFloat(tax),
+        payment: direct ? '100' : payment,
         date
       };
 
       const updatedList = [...items, newItem];
       saveData(updatedList);
       setName(''); setPrice('');
-      setIndex(0); // Переход на вкладку "День"
+      setIndex(0);
     };
 
     return (
@@ -97,18 +98,32 @@ function App() {
           <Toolbar><Typography variant="h6">Новая запись</Typography></Toolbar>
         </AppBar>
         <Container sx={{ mt: 2, display: 'flex', flexDirection: 'column', gap: 2 }}>
-          <TextField label="Дата" type="date" value={date} onChange={(e) => setDate(e.target.value)} fullWidth InputLabelProps={{ shrink: true }} />
+          <TextField label="Дата" type="date" value={date} onChange={(e) => setDate(e.target.value)} fullWidth slotProps={{ inputLabel: { shrink: true } }} />
           <TextField label="Название" value={name} onChange={(e) => setName(e.target.value)} fullWidth />
-          <TextField label="Стоимость" type="number" value={price} onChange={(e) => setPrice(e.target.value)} fullWidth />
-          <TextField label="Налог %" type="number" value={tax} onChange={(e) => setTax(e.target.value)} fullWidth />
 
-          <FormControl>
-            <FormLabel>Процент выплаты:</FormLabel>
-            <RadioGroup row value={payment} onChange={(e) => setPayment(e.target.value)}>
-              <FormControlLabel value="40" control={<Radio />} label="40%" />
-              <FormControlLabel value="50" control={<Radio />} label="50%" />
-            </RadioGroup>
-          </FormControl>
+          <FormControlLabel
+            control={<Switch checked={direct} onChange={(e) => setDirect(e.target.checked)} />}
+            label="Без вычетов (прямая сумма)"
+          />
+
+          <TextField
+            label={direct ? "Сумма выплаты" : "Стоимость"}
+            type="number"
+            value={price}
+            onChange={(e) => setPrice(e.target.value)}
+            fullWidth
+          />
+
+          {!direct && <>
+            <TextField label="Налог %" type="number" value={tax} onChange={(e) => setTax(e.target.value)} fullWidth />
+            <FormControl>
+              <FormLabel>Процент выплаты:</FormLabel>
+              <RadioGroup row value={payment} onChange={(e) => setPayment(e.target.value)}>
+                <FormControlLabel value="40" control={<Radio />} label="40%" />
+                <FormControlLabel value="50" control={<Radio />} label="50%" />
+              </RadioGroup>
+            </FormControl>
+          </>}
 
           <Button variant="contained" size="large" onClick={handleAdd} sx={{ mt: 2 }}>
             Сохранить
@@ -139,7 +154,7 @@ function App() {
           <Toolbar><Typography variant="h6">День</Typography></Toolbar>
         </AppBar>
         <Container sx={{ mt: 2 }}>
-          <TextField label="Выбранная дата" type="date" value={selectedDate} onChange={(e) => setSelectedDate(e.target.value)} fullWidth InputLabelProps={{ shrink: true }} sx={{ mb: 2 }} />
+          <TextField label="Выбранная дата" type="date" value={selectedDate} onChange={(e) => setSelectedDate(e.target.value)} fullWidth slotProps={{ inputLabel: { shrink: true } }} sx={{ mb: 2 }} />
           
           <Card>
             <CardContent>
@@ -182,12 +197,14 @@ function App() {
     const currentMonth = new Date().toISOString().split('-').slice(0, 2).join('-');
     const monthItems = items.filter(i => i.date.startsWith(currentMonth));
     const totalRev = monthItems.reduce((s, i) => s + i.price, 0);
-    const totalPay = monthItems.reduce((s, i) => s + calculatePayout(i.price, i.tax, i.payment), 0);
-
     const daysMap = monthItems.reduce((acc, i) => {
-      acc[i.date] = i;
+      if (!acc[i.date]) acc[i.date] = { totalRev: 0, totalPay: 0 };
+      acc[i.date].totalRev += i.price;
+      acc[i.date].totalPay += calculatePayout(i.price, i.tax, i.payment);
       return acc;
     }, {});
+
+    const totalPayWithFloor = Object.values(daysMap).reduce((s, d) => s + Math.max(d.totalPay, 1500), 0);
 
     return (
       <Box sx={{ pb: 7 }}>
@@ -198,16 +215,16 @@ function App() {
           <Card>
             <CardContent>
               <Typography>Оборот: {totalRev.toFixed(2)} ₽</Typography>
-              <Typography variant="h6">Прибыль: {totalPay.toFixed(2)} ₽</Typography>
+              <Typography variant="h6">Прибыль: {totalPayWithFloor.toFixed(2)} ₽</Typography>
             </CardContent>
           </Card>
-          
+
           <Typography variant="subtitle1" sx={{ mb: 1 }}>История по дням:</Typography>
           {Object.keys(daysMap).sort().map(date => (
             <Paper key={date} variant="outlined" sx={{ p: 2, mb: 1, display: 'flex', justifyContent: 'space-between' }}>
               <Typography fontWeight="bold">{date}</Typography>
-              <Typography>Сумма: {calculatePayout(daysMap[date].price, daysMap[date].tax, daysMap[date].payment)} ₽</Typography>
-              <Typography>Оборот: {daysMap[date].price} ₽</Typography>
+              <Typography>Сумма: {Math.max(daysMap[date].totalPay, 1500).toFixed(2)} ₽</Typography>
+              <Typography>Оборот: {daysMap[date].totalRev.toFixed(2)} ₽</Typography>
             </Paper>
           ))}
         </Container>
@@ -229,7 +246,7 @@ function App() {
         <BottomNavigation
           showLabels
           value={index}
-          onChange={(event, newValue) => setIndex(newValue)}
+          onChange={(_, newValue) => setIndex(newValue)}
         >
           <BottomNavigationAction label="День" icon={<CalendarToday />} />
           <BottomNavigationAction label="Месяц" icon={<DateRange />} />
